@@ -64,7 +64,7 @@ namespace PaymentSystem
             $"hash={Convert.ToBase64String(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
 
         public override string GetPayingLink(Order order) =>
-            $"order.{_name.ToLower()}.{_domain}/pay?{GetHash(order.Id + order.Amount)}";
+            $"order.{_name.ToLower()}.{_domain}/pay?{GetHash(order.Id + order.Amount)}"; 
     }
 
     public class PaymentSystem3 : PaymentSystem
