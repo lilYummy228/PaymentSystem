@@ -46,10 +46,7 @@ namespace PaymentSystem
         }
 
         public override string GetPayingLink(Order order) =>
-            $"pay.{_name.ToLower()}.{_domain}/{nameof(order)}?amount={order.Amount}{_currency}&{GetHash(order.Id)}";
-
-        public override string GetHash(int input) =>
-            $"hash={Convert.ToBase64String(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
+            $"pay.{_name.ToLower()}.{_domain}/{nameof(order)}?amount={order.Amount}{_currency}&{_hashGenerator.GetHashMD5(order.Id)}";
     }
 
     public class PaymentSystem2 : PaymentSystem
@@ -60,11 +57,8 @@ namespace PaymentSystem
             _name = name;
         }
 
-        public override string GetHash(int input) =>
-            $"hash={Convert.ToBase64String(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
-
         public override string GetPayingLink(Order order) =>
-            $"order.{_name.ToLower()}.{_domain}/pay?{GetHash(order.Id + order.Amount)}"; 
+            $"order.{_name.ToLower()}.{_domain}/pay?{_hashGenerator.GetHashMD5(order.Id + order.Amount)}"; 
     }
 
     public class PaymentSystem3 : PaymentSystem
@@ -80,21 +74,26 @@ namespace PaymentSystem
             _name = name;
         }
 
-        public override string GetHash(int input) =>
-            $"hash={Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
-
         public override string GetPayingLink(Order order) =>
-            $"{_name.ToLower()}.{_domain}/pay?amount={order.Amount}&currency={_currency}&{GetHash(order.Amount + order.Id + _secretKey)}";
+            $"{_name.ToLower()}.{_domain}/pay?amount={order.Amount}&currency={_currency}&{_hashGenerator.GetHashSHA1(order.Amount + order.Id + _secretKey)}";
     }
 
     public abstract class PaymentSystem : IPaymentSystem
     {
+        protected HashGenerator _hashGenerator = new HashGenerator();
         protected Domain _domain;
         protected string _name;
 
-        public abstract string GetHash(int input);
-
         public abstract string GetPayingLink(Order order);
+    }
+
+    public class HashGenerator
+    {
+        public string GetHashMD5(int input) => 
+            $"hash={Convert.ToBase64String(MD5.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
+
+        public string GetHashSHA1(int input) => 
+            $"hash={Convert.ToBase64String(SHA1.Create().ComputeHash(Encoding.UTF8.GetBytes(Convert.ToString(input))))}";
     }
 
     public class Order
@@ -105,13 +104,8 @@ namespace PaymentSystem
         public Order(int id, int amount) => (Id, Amount) = (id, amount);
     }
 
-    public interface IHashCoding
-    {
-        string GetHash(int input);
-    }
-
-    public interface IPaymentSystem : IHashCoding
-    {
+    public interface IPaymentSystem
+    {        
         string GetPayingLink(Order order);
     }
 
